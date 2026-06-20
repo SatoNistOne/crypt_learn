@@ -84,7 +84,9 @@ class Ledger:
     
     async def init_db(self):
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(
+                lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True)
+            )
         
         async with self.engine.begin() as conn:
             await conn.execute(text(f"""
@@ -103,7 +105,7 @@ class Ledger:
             """))
         
         await self._load_from_db()
-    
+
     async def _load_from_db(self):
         async with self.async_session() as session:
             result = await session.execute(

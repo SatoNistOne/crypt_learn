@@ -299,7 +299,7 @@
         </div>
     </main>
 
-    <div class="modal" id="loginModal">
+    <div class="modal active" id="loginModal">
         <div class="modal-content">
             <h2>Вход</h2>
             <div class="form-group">
@@ -312,6 +312,9 @@
             </div>
             <button onclick="login()">Войти</button>
             <button class="secondary" onclick="closeModals()">Отмена</button>
+            <div style="margin-top: 16px; font-size: 13px; color: #8b949e; text-align: center; border-top: 1px solid #1a3a5c; padding-top: 12px;">
+                Нет аккаунта? <a href="#" onclick="closeModals(); showRegister(); return false;" style="color: #4a9eff;">Зарегистрироваться</a>
+            </div>
         </div>
     </div>
 
@@ -328,6 +331,9 @@
             </div>
             <button onclick="register()">Зарегистрироваться</button>
             <button class="secondary" onclick="closeModals()">Отмена</button>
+            <div style="margin-top: 16px; font-size: 13px; color: #8b949e; text-align: center; border-top: 1px solid #1a3a5c; padding-top: 12px;">
+                Уже есть аккаунт? <a href="#" onclick="closeModals(); showLogin(); return false;" style="color: #4a9eff;">Войти</a>
+            </div>
         </div>
     </div>
 
@@ -338,10 +344,12 @@
 
         function showLogin() {
             document.getElementById('loginModal').classList.add('active');
+            document.getElementById('registerModal').classList.remove('active');
         }
 
         function showRegister() {
             document.getElementById('registerModal').classList.add('active');
+            document.getElementById('loginModal').classList.remove('active');
         }
 
         function closeModals() {
