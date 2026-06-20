@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptLearn Exchange</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a1628;
+            color: #c9d1d9;
+            min-height: 100vh;
+        }
+        header {
+            background: #0d1f3c;
+            border-bottom: 1px solid #1a3a5c;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4a9eff;
+        }
+        .logo span { color: #ff8c42; }
+        .auth-section {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .user-badge {
+            padding: 6px 12px;
+            background: #1a5fb4;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        button {
+            background: #1a5fb4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        button:hover { background: #2574d4; }
+        button.danger { background: #c0392b; }
+        button.danger:hover { background: #e74c3c; }
+        button.secondary { background: #1a3a5c; }
+        button.secondary:hover { background: #254a6c; }
+        button.small { padding: 4px 8px; font-size: 12px; }
+        main {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 16px;
+            padding: 16px 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .panel {
+            background: #0d1f3c;
+            border: 1px solid #1a3a5c;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .panel h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #f0f6fc;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 4px;
+        }
+        input, select {
+            width: 100%;
+            background: #0a1628;
+            border: 1px solid #1a3a5c;
+            color: #c9d1d9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+        .balance-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        .balance-item:last-child { border-bottom: none; }
+        .balance-token {
+            font-weight: 600;
+            color: #4a9eff;
+        }
+        .balance-amount {
+            font-family: 'Courier New', monospace;
+        }
+        .balance-locked {
+            color: #ff8c42;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 8px;
+            font-size: 12px;
+            color: #8b949e;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        td {
+            padding: 8px;
+            font-size: 13px;
+            border-bottom: 1px solid #1a3a5c;
+        }
+        .bid { color: #3fb950; }
+        .ask { color: #f85149; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #0d1f3c;
+            border: 1px solid #1a3a5c;
+            border-radius: 8px;
+            padding: 24px;
+            width: 400px;
+        }
+        .modal-content h2 {
+            margin-bottom: 16px;
+            color: #f0f6fc;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #1a3a5c;
+            border: 1px solid #1a3a5c;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .tab.active {
+            background: #1a5fb4;
+            border-color: #1a5fb4;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .cluster-status {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-online { background: #3fb950; }
+        .status-offline { background: #f85149; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Crypt<span>Learn</span> Exchange</div>
+        <div class="auth-section" id="authSection">
+            <button onclick="showLogin()">Войти</button>
+            <button class="secondary" onclick="showRegister()">Регистрация</button>
+        </div>
+    </header>
+
+    <main id="mainContent" style="display: none;">
+        <div class="panel">
+            <h3>Баланс</h3>
+            <div id="balances">Загрузка...</div>
+        </div>
+
+        <div class="panel">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('trade')">Торговля</div>
+                <div class="tab" onclick="switchTab('orders')">Мои ордера</div>
+                <div class="tab" onclick="switchTab('trades')">История сделок</div>
+                <div class="tab" onclick="switchTab('cluster')">Кластер</div>
+            </div>
+
+            <div id="trade-tab" class="tab-content active">
+                <h3>Разместить ордер</h3>
+                <div class="form-group">
+                    <label>Торговая пара</label>
+                    <select id="pair">
+                        <option value="BTC_LEARN">BTC/LEARN</option>
+                        <option value="ETH_LEARN">ETH/LEARN</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Сторона</label>
+                    <select id="side">
+                        <option value="BUY">Покупка</option>
+                        <option value="SELL">Продажа</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Цена</label>
+                    <input type="number" id="price" value="100" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Количество</label>
+                    <input type="number" id="quantity" value="1" step="0.01">
+                </div>
+                <button onclick="placeOrder()">Разместить ордер</button>
+            </div>
+
+            <div id="orders-tab" class="tab-content">
+                <h3>Мои ордера</h3>
+                <table id="myOrders">
+                    <thead>
+                        <tr>
+                            <th>Пара</th>
+                            <th>Сторона</th>
+                            <th>Цена</th>
+                            <th>Кол-во</th>
+                            <th>Статус</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="trades-tab" class="tab-content">
+                <h3>История сделок</h3>
+                <table id="tradeHistory">
+                    <thead>
+                        <tr>
+                            <th>Пара</th>
+                            <th>Цена</th>
+                            <th>Кол-во</th>
+                            <th>Покупатель</th>
+                            <th>Продавец</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="cluster-tab" class="tab-content">
+                <h3>Статус кластера</h3>
+                <div id="clusterStatus" class="cluster-status">Загрузка...</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Стакан ордеров</h3>
+            <table id="orderbook">
+                <thead>
+                    <tr>
+                        <th>Покупка</th>
+                        <th>Кол-во</th>
+                        <th>Продажа</th>
+                        <th>Кол-во</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>Вход</h2>
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" id="loginUsername">
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" id="loginPassword">
+            </div>
+            <button onclick="login()">Войти</button>
+            <button class="secondary" onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <h2>Регистрация</h2>
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" id="registerUsername">
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" id="registerPassword">
+            </div>
+            <button onclick="register()">Зарегистрироваться</button>
+            <button class="secondary" onclick="closeModals()">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = localStorage.getItem('currentUser');
+        let myOrders = [];
+
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function showRegister() {
+            document.getElementById('registerModal').classList.add('active');
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            if (tabName === 'orders') loadMyOrders();
+            if (tabName === 'trades') loadTradeHistory();
+            if (tabName === 'cluster') loadClusterStatus();
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+            if (data.token) {
+                authToken = data.token;
+                currentUser = data.username;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', currentUser);
+                closeModals();
+                showMainContent();
+                loadAll();
+            } else {
+                alert(data.detail || data.error);
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+            if (data.token) {
+                authToken = data.token;
+                currentUser = data.username;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', currentUser);
+                closeModals();
+                showMainContent();
+                loadAll();
+            } else {
+                alert(data.detail || data.error);
+            }
+        }
+
+        function showMainContent() {
+            document.getElementById('mainContent').style.display = 'grid';
+            document.getElementById('authSection').innerHTML = `
+                <span class="user-badge">${currentUser}</span>
+                <button class="danger" onclick="logout()">Выйти</button>
+            `;
+        }
+
+        async function logout() {
+            await fetch('/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            authToken = null;
+            currentUser = null;
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('authSection').innerHTML = `
+                <button onclick="showLogin()">Войти</button>
+                <button class="secondary" onclick="showRegister()">Регистрация</button>
+            `;
+            showLogin();
+        }
+
+        async function placeOrder() {
+            const pair = document.getElementById('pair').value;
+            const side = document.getElementById('side').value;
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+
+            const res = await fetch('/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ pair, side, price: parseFloat(price), quantity: parseFloat(quantity) })
+            });
+
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                myOrders.push({
+                    order_id: data.order_id,
+                    pair,
+                    side,
+                    price,
+                    quantity,
+                    status: 'OPEN'
+                });
+                alert(`Ордер размещен: ${data.order_id}`);
+                loadBalances();
+                loadOrderbook();
+            }
+        }
+
+        async function cancelOrder(orderId, pair) {
+            const res = await fetch(`/orders/${orderId}?pair=${pair}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Ордер отменен');
+                loadMyOrders();
+                loadBalances();
+                loadOrderbook();
+            }
+        }
+
+        async function loadBalances() {
+            const res = await fetch(`/balances/${currentUser}`);
+            const data = await res.json();
+            
+            let html = '';
+            for (const [token, balance] of Object.entries(data)) {
+                html += `
+                    <div class="balance-item">
+                        <span class="balance-token">${token}</span>
+                        <div>
+                            <div class="balance-amount">${balance.available}</div>
+                            ${parseFloat(balance.locked) > 0 ? `<div class="balance-locked">Locked: ${balance.locked}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('balances').innerHTML = html || 'Нет балансов';
+        }
+
+        async function loadOrderbook() {
+            const pair = document.getElementById('pair').value;
+            const res = await fetch(`/orderbook/${pair}`);
+            const data = await res.json();
+            
+            const tbody = document.querySelector('#orderbook tbody');
+            tbody.innerHTML = '';
+            
+            const maxRows = Math.max(data.bids.length, data.asks.length);
+            for (let i = 0; i < maxRows; i++) {
+                const row = tbody.insertRow();
+                
+                if (i < data.bids.length) {
+                    row.insertCell().innerHTML = `<span class="bid">${data.bids[i].price}</span>`;
+                    row.insertCell().textContent = data.bids[i].quantity;
+                } else {
+                    row.insertCell();
+                    row.insertCell();
+                }
+                
+                if (i < data.asks.length) {
+                    row.insertCell().innerHTML = `<span class="ask">${data.asks[i].price}</span>`;
+                    row.insertCell().textContent = data.asks[i].quantity;
+                } else {
+                    row.insertCell();
+                    row.insertCell();
+                }
+            }
+        }
+
+        function loadMyOrders() {
+            const tbody = document.querySelector('#myOrders tbody');
+            tbody.innerHTML = '';
+            
+            myOrders.forEach(order => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = order.pair;
+                row.insertCell().textContent = order.side;
+                row.insertCell().textContent = order.price;
+                row.insertCell().textContent = order.quantity;
+                row.insertCell().textContent = order.status;
+                const actionCell = row.insertCell();
+                if (order.status === 'OPEN' || order.status === 'PARTIALLY_FILLED') {
+                    actionCell.innerHTML = `<button class="small danger" onclick="cancelOrder('${order.order_id}', '${order.pair}')">Отменить</button>`;
+                }
+            });
+        }
+
+        async function loadTradeHistory() {
+            const pair = document.getElementById('pair').value;
+            const res = await fetch(`/trades/${pair}`);
+            const data = await res.json();
+            
+            const tbody = document.querySelector('#tradeHistory tbody');
+            tbody.innerHTML = '';
+            
+            if (data.trades) {
+                data.trades.forEach(trade => {
+                    const row = tbody.insertRow();
+                    row.insertCell().textContent = trade.pair;
+                    row.insertCell().textContent = trade.price;
+                    row.insertCell().textContent = trade.quantity;
+                    row.insertCell().textContent = trade.buyer_id;
+                    row.insertCell().textContent = trade.seller_id;
+                });
+            }
+        }
+
+        async function loadClusterStatus() {
+            const res = await fetch('/status/wallet');
+            const data = await res.json();
+            
+            let html = '<div style="margin-bottom: 12px;">';
+            html += `<div><span class="status-indicator status-online"></span><strong>Роль:</strong> ${data.role}</div>`;
+            html += `<div><strong>Term:</strong> ${data.term}</div>`;
+            html += `<div><strong>Лидер:</strong> ${data.leader_id || 'нет'}</div>`;
+            html += `<div><strong>Последовательность:</strong> ${data.last_seq}</div>`;
+            html += '</div>';
+            
+            const matchingRes = await fetch('/status/matching');
+            const matchingData = await matchingRes.json();
+            
+            html += '<div style="margin-top: 16px;"><h4 style="margin-bottom: 8px;">Matching Engines</h4>';
+            for (const [pair, status] of Object.entries(matchingData)) {
+                html += `<div><span class="status-indicator status-online"></span><strong>${pair}:</strong> ${status.orders_count || 0} ордеров, ${status.trades_count || 0} сделок</div>`;
+            }
+            html += '</div>';
+            
+            document.getElementById('clusterStatus').innerHTML = html;
+        }
+
+        function loadAll() {
+            loadBalances();
+            loadOrderbook();
+        }
+
+        // Автопоказ окна логина если не авторизован
+        if (authToken && currentUser) {
+            showMainContent();
+            loadAll();
+            setInterval(loadBalances, 3000);
+            setInterval(loadOrderbook, 3000);
+        } else {
+            showLogin();
+        }
+
+        document.getElementById('pair').addEventListener('change', loadOrderbook);
+    </script>
+</body>
+</html>

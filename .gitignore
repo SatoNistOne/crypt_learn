@@ -1,0 +1,11 @@
+echo '__pycache__/
+*.pyc
+.env
+.venv/
+*.egg-info/
+node_modules/
+android/
+ios/
+dist/
+build/
+*.db' > .gitignore

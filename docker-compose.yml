@@ -1,0 +1,163 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: cryptlearn
+      POSTGRES_PASSWORD: cryptlearn123
+      POSTGRES_DB: cryptlearn
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cryptlearn"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:latest
+    command: ["--http_port", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  wallet-1:
+    build:
+      context: .
+      dockerfile: services/wallet/Dockerfile
+    environment:
+      - NODE_ID=wallet-1
+      - PEERS=wallet-1,wallet-2,wallet-3
+      - NATS_URL=nats://nats:4222
+      - DATABASE_URL=postgresql+asyncpg://cryptlearn:cryptlearn123@postgres/cryptlearn
+    ports:
+      - "8001:8000"
+    volumes:
+      - wallet1_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  wallet-2:
+    build:
+      context: .
+      dockerfile: services/wallet/Dockerfile
+    environment:
+      - NODE_ID=wallet-2
+      - PEERS=wallet-1,wallet-2,wallet-3
+      - NATS_URL=nats://nats:4222
+      - DATABASE_URL=postgresql+asyncpg://cryptlearn:cryptlearn123@postgres/cryptlearn
+    ports:
+      - "8002:8000"
+    volumes:
+      - wallet2_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  wallet-3:
+    build:
+      context: .
+      dockerfile: services/wallet/Dockerfile
+    environment:
+      - NODE_ID=wallet-3
+      - PEERS=wallet-1,wallet-2,wallet-3
+      - NATS_URL=nats://nats:4222
+      - DATABASE_URL=postgresql+asyncpg://cryptlearn:cryptlearn123@postgres/cryptlearn
+    ports:
+      - "8003:8000"
+    volumes:
+      - wallet3_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  matching-engine-btc:
+    build:
+      context: .
+      dockerfile: services/matching_engine/Dockerfile
+    environment:
+      - TRADING_PAIR=BTC_LEARN
+      - NODE_ID=matching-btc
+    ports:
+      - "8004:8000"
+    depends_on:
+      - nats
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  matching-engine-eth:
+    build:
+      context: .
+      dockerfile: services/matching_engine/Dockerfile
+    environment:
+      - TRADING_PAIR=ETH_LEARN
+      - NODE_ID=matching-eth
+    ports:
+      - "8005:8000"
+    depends_on:
+      - nats
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api_gateway/Dockerfile
+    environment:
+      - AUTH_DATABASE_URL=postgresql+asyncpg://cryptlearn:cryptlearn123@postgres/cryptlearn
+    ports:
+      - "8000:8000"
+    volumes:
+      - auth_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      wallet-1:
+        condition: service_started
+      matching-engine-btc:
+        condition: service_started
+      matching-engine-eth:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  wallet1_data:
+  wallet2_data:
+  wallet3_data:
+  auth_data:
+  postgres_data:
